@@ -3,17 +3,33 @@ plugins {
 }
 
 android {
-    namespace 'com.example.application'
+    namespace 'git.gxosty.tunmode'
     compileSdk 34
 
     defaultConfig {
-        applicationId "com.example.application"
+        applicationId "git.gxosty.tunmode"
         minSdk 21
         targetSdk 34
         versionCode 1
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        externalNativeBuild {
+            cmake {
+                cppFlags '-std=c++20'
+
+                if (project.hasProperty("armeabi-v7a")) {
+                    abiFilters "armeabi-v7a"
+                } else if(project.hasProperty("arm64-v8a")) {
+                    abiFilters "arm64-v8a"
+                } else {
+                    abiFilters "armeabi-v7a", "arm64-v8a"
+                }
+
+                arguments "-DANDROID_ARM_NEON=TRUE", '-DANDROID_STL=c++_shared'
+            }
+        }
     }
 
     buildTypes {
@@ -29,6 +45,12 @@ android {
 
     buildFeatures {
         buildConfig true
+    }
+
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+        }
     }
 }
 
