@@ -1,4 +1,5 @@
 #include <tunmode/tunmode.hpp>
+#include <tunmode/socket/sessionsocket.hpp>
 #include <misc/logger.hpp>
 
 #include <atomic>
@@ -17,7 +18,8 @@ namespace tunmode
 	namespace params
 	{
 		JavaVM* jvm;
-		int tun_fd;
+		TunSocket tun;
+		in_addr tun_addr;
 		jobject TunModeService_object;
 
 		std::atomic<bool> stop_flag;
@@ -32,8 +34,10 @@ namespace tunmode
 
 	void initialize(JNIEnv* env, jobject TunModeService_object)
 	{
-		params::tun_fd = 0;
+		params::tun = 0;
+		SessionSocket::tun = &params::tun;
 		params::TunModeService_object = env->NewGlobalRef(TunModeService_object);
+
 
 		params::stop_flag.store(false);
 		params::thread_count.store(0);
@@ -74,19 +78,15 @@ namespace tunmode
 	{
 		_thread_start();
 
-		struct pollfd socket_fds[1];
-
-		socket_fds[0].fd = params::tun_fd;
-		socket_fds[0].events = POLLIN;
-		socket_fds[0].revents = 0;
-
 		while (!params::stop_flag.load())
 		{
-			int ret = poll(socket_fds, 1, 2000);
+			int revents = 0;
+			int ret = params::tun.poll(2000, revents);
 
 			if (ret == -1)
 			{
 				LOGE(TAG, "Poll Error");
+				break;
 			}
 			else if (ret == 0)
 			{
@@ -94,7 +94,7 @@ namespace tunmode
 			}
 			else
 			{
-				if (socket_fds[0].revents & POLLIN)
+				if (revents & POLLIN)
 				{
 
 				}
@@ -121,8 +121,8 @@ namespace tunmode
 
 	void _tunnel_closed()
 	{
-		close(params::tun_fd);
-		params::tun_fd = 0;
+		params::tun.close();
+		params::tun = 0;
 
 		if (params::TunModeService_object == 0) {
 			return;

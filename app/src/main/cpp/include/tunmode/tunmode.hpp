@@ -1,14 +1,17 @@
 #pragma once
 
-#include <jni.h>
+#include "socket/tunsocket.hpp"
 
+#include <jni.h>
+#include <netinet/in.h>
 #include <string>
 
 namespace tunmode
 {
 	namespace params
 	{
-		extern int tun_fd;
+		extern TunSocket tun;
+		extern in_addr tun_addr;
 		extern jobject TunModeService_object;
 	}
 

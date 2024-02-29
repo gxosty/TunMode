@@ -36,7 +36,7 @@ public class TunModeService extends VpnService {
 	public static final String INTENT_EXTRA_OPERATION = "TunModeService_Operation";
 	public static final String NOTIFICATION_CHANNEL = "tun_mode_vpn_service_nc";
 
-	private static State state;
+	private static State state = TunModeService.State.DISCONNECTED;
 	private static EventListener eventListener = null;
 	private static AppCompatActivity activity = null;
 
@@ -86,10 +86,6 @@ public class TunModeService extends VpnService {
 
 		switch (operation) {
 		case INITIALIZE:
-			if (TunModeService.getState() == null) {
-				TunModeService.setState(TunModeService.State.DISCONNECTED);
-			}
-
 			break;
 
 		case CONNECT:
@@ -135,6 +131,8 @@ public class TunModeService extends VpnService {
 
 		if (this.eventListener == null) {
 			this.stopSelf();
+		} else {
+			this.stopForeground(true);
 		}
 
 		if (this.notif != null) {
