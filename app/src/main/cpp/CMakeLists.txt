@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 
-set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_BUILD_TYPE Debug)
 
 if ((CMAKE_BUILD_TYPE STREQUAL "Release") OR (CMAKE_BUILD_TYPE STREQUAL "MinSizeRel"))
 	add_definitions(-DRELEASE_MODE=1)
@@ -60,6 +60,8 @@ add_library(tunmode SHARED
 	src/tunmode/socket/sessionsocket.cxx
 	src/tunmode/socket/tunsocket.cxx
 	src/tunmode/socket/tcpsocket.cxx
+
+	src/RawSocket/CheckSum.cpp
 )
 
 target_link_libraries(tunmode

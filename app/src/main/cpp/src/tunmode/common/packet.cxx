@@ -1,5 +1,9 @@
 #include <tunmode/common/packet.hpp>
 
+#include <tunmode/common/utils.hpp>
+#include <netinet/ip.h>
+#include <netinet/tcp.h>
+
 namespace tunmode
 {
 	Packet::Packet() : Buffer()
@@ -20,7 +24,14 @@ namespace tunmode
 
 	InBuffer Packet::get_data() const
 	{
-		return InBuffer(this->buffer, this->size);
+		ip* ip_header;
+		tcphdr* tcp_header;
+
+		utils::point_headers_tcp((Packet*)this, &ip_header, &tcp_header);
+
+		uintptr_t data_start = (uintptr_t)tcp_header + tcp_header->th_off * 4;
+
+		return InBuffer((void*)data_start, (size_t)(this->size - (data_start - (uintptr_t)this->buffer)));
 	}
 
 	void Packet::set_id(uint64_t id)

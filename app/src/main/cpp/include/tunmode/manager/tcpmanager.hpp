@@ -5,6 +5,8 @@
 
 namespace tunmode
 {
+	class TCPSession;
+	
 	class TCPManager : public SessionManager
 	{
 	public:
@@ -14,5 +16,7 @@ namespace tunmode
 
 	private:
 		Session* add(uint64_t id) override;
+
+		friend class TCPSession;
 	};
 }

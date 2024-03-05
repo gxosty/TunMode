@@ -1,8 +1,8 @@
 #include <tunmode/tunmode.hpp>
 #include <tunmode/socket/sessionsocket.hpp>
+#include <tunmode/manager/tcpmanager.hpp>
 #include <misc/logger.hpp>
 
-#include <atomic>
 #include <future>
 #include <string>
 #include <vector>
@@ -10,8 +10,6 @@
 
 #include <poll.h>
 #include <unistd.h>
-
-#define TAG "TunMode"
 
 namespace tunmode
 {
@@ -21,11 +19,13 @@ namespace tunmode
 		TunSocket tun;
 		in_addr tun_addr;
 		jobject TunModeService_object;
-
 		std::atomic<bool> stop_flag;
+		
 		std::promise<void> tunnel_promise;
 		std::atomic<int> thread_count;
 	}
+
+	TCPManager tcp_session_manager;
 
 	void set_jvm(JavaVM* jvm)
 	{
@@ -96,7 +96,21 @@ namespace tunmode
 			{
 				if (revents & POLLIN)
 				{
+					Packet packet;
+					params::tun > packet;
 
+					switch (packet.get_protocol())
+					{
+					case TUNMODE_PROTOCOL_TCP:
+						tcp_session_manager.handle_packet(packet);
+						break;
+
+					case TUNMODE_PROTOCOL_UDP:
+						break;
+
+					default:
+						break;
+					}
 				}
 				else
 				{
@@ -159,10 +173,12 @@ namespace tunmode
 
 		_run_loops();
 
+		LOGI_("----- [Tunnel opened] -----");
 		tunnel_future.wait();
 
 		_cleanup();
 		_tunnel_closed();
+		LOGI_("----- [Tunnel closed] -----");
 	}
 
 	void close_tunnel()

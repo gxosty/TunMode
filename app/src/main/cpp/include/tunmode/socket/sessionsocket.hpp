@@ -21,10 +21,12 @@ namespace tunmode
 		virtual size_t recv(Packet& packet);
 		virtual size_t recv(Buffer& buffer) = 0;
 
-		virtual void   operator<<(const Packet& packet);
+		virtual void   operator<(const Packet& packet);
 		virtual void   operator<<(const Buffer& buffer) = 0;
-		virtual void   operator>>(Packet& packet);
+		virtual void   operator>(Packet& packet);
 		virtual void   operator>>(Buffer& buffer) = 0;
+
+		int get_read_pipe();
 
 	private:
 		int session_pipe[2];

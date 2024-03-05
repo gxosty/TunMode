@@ -11,9 +11,13 @@ namespace tunmode
 	{
 	public:
 		Buffer();
-		Buffer(void* buffer, size_t size);
+		Buffer(const void* buffer, const size_t& size);
+
+		void operator()(const void* buffer, const size_t& size);
 
 	private:
-		char _buffer[TUNMODE_BUFFER_SIZE];
+		char _buffer[TUNMODE_BUFFER_SIZE + 200];
+
+		void _copy(const void* buffer, const size_t& size);
 	};
 }

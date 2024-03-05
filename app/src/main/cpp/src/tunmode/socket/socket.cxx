@@ -1,4 +1,5 @@
 #include <tunmode/socket/socket.hpp>
+#include <tunmode/definitions.hpp>
 
 #include <sys/socket.h>
 #include <unistd.h>
@@ -55,7 +56,7 @@ namespace tunmode
 
 	size_t Socket::recv(Buffer* buffer, int flags)
 	{
-		size_t size = ::recv(this->socket, buffer->get_buffer(), buffer->get_size(), flags);
+		size_t size = ::recv(this->socket, buffer->get_buffer(), TUNMODE_BUFFER_SIZE, flags);
 
 		if (size != -1)
 		{

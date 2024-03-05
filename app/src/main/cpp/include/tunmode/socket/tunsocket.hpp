@@ -22,8 +22,8 @@ namespace tunmode
 
 		int    get_tunnel();
 
-		void   operator<<(const Packet& packet);
-		void   operator>>(Packet& packet);
+		void   operator<(const Packet& packet);
+		void   operator>(Packet& packet);
 		int    operator=(const int& tunnel);
 
 	private:

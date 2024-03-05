@@ -1,5 +1,7 @@
 #pragma once
 
+#define TAG "tunmode"
+
 #ifndef RELEASE_MODE
 	#include <android/log.h>
 
@@ -13,3 +15,8 @@
 	#define LOGI(...)
 	#define LOGW(...)
 #endif // RELEASE_MODE
+
+#define LOGD_(...) LOGD(TAG, __VA_ARGS__)
+#define LOGE_(...) LOGE(TAG, __VA_ARGS__)
+#define LOGI_(...) LOGI(TAG, __VA_ARGS__)
+#define LOGW_(...) LOGW(TAG, __VA_ARGS__)

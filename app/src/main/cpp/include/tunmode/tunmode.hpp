@@ -4,6 +4,7 @@
 
 #include <jni.h>
 #include <netinet/in.h>
+#include <atomic>
 #include <string>
 
 namespace tunmode
@@ -13,6 +14,7 @@ namespace tunmode
 		extern TunSocket tun;
 		extern in_addr tun_addr;
 		extern jobject TunModeService_object;
+		extern std::atomic<bool> stop_flag;
 	}
 
 	void set_jvm(JavaVM* jvm);

@@ -21,6 +21,5 @@ namespace tunmode
 		virtual Session* add(uint64_t id) = 0;
 		Session* get_or_add(uint64_t id);
 		void remove(uint64_t id);
-
 	};
 }

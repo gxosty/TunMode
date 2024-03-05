@@ -153,8 +153,8 @@ public class TunModeService extends VpnService {
 		new Thread(() -> {
 			VpnService.Builder builder = new VpnService.Builder()
 				.addAddress(TunModeService.tunAddress, 32)
-				// .addRoute("0.0.0.0", 0)
-				.addRoute("142.251.37.68", 32)
+				.addRoute("0.0.0.0", 0)
+				// .addRoute("142.251.37.68", 32)
 				// .addRoute(dnsAddress, 32)
 				// .addDnsServer(dnsAddress) // route all dns queries as well
 				.setMtu(8192);

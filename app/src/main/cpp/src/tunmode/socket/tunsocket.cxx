@@ -5,6 +5,8 @@
 #include <unistd.h>
 #include <netinet/ip.h>
 
+#include <misc/logger.hpp>
+
 namespace tunmode
 {
 	TunSocket::TunSocket()
@@ -24,7 +26,7 @@ namespace tunmode
 
 	size_t TunSocket::recv(Packet* packet)
 	{
-		size_t size = ::read(this->tunnel, packet->get_buffer(), packet->get_size());
+		size_t size = ::read(this->tunnel, packet->get_buffer(), TUNMODE_BUFFER_SIZE);
 		packet->set_size(size);
 		ip* ip_header = (ip*)packet->get_buffer();
 		int proto = ip_header->ip_p;
@@ -63,12 +65,12 @@ namespace tunmode
 		return this->tunnel;
 	}
 
-	void TunSocket::operator<<(const Packet& packet)
+	void TunSocket::operator<(const Packet& packet)
 	{
 		this->send(&packet);
 	}
 
-	void TunSocket::operator>>(Packet& packet)
+	void TunSocket::operator>(Packet& packet)
 	{
 		this->recv(&packet);
 	}

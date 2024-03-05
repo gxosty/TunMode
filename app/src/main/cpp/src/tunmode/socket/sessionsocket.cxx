@@ -1,6 +1,11 @@
 #include <tunmode/socket/sessionsocket.hpp>
+#include <tunmode/common/utils.hpp>
+#include <tunmode/definitions.hpp>
 
 #include <unistd.h>
+#include <netinet/ip.h>
+
+#include <misc/logger.hpp>
 
 namespace tunmode
 {
@@ -27,18 +32,40 @@ namespace tunmode
 
 	size_t SessionSocket::recv(Packet& packet)
 	{
-		size_t size = ::read(this->session_pipe[0], packet.get_buffer(), packet.get_size());
+		size_t size = ::read(this->session_pipe[0], packet.get_buffer(), TUNMODE_BUFFER_SIZE);
 		packet.set_size(size);
+		ip* ip_header = (ip*)packet.get_buffer();
+		int proto = ip_header->ip_p;
+		packet.set_protocol(proto);
+
+		switch (proto)
+		{
+		case (TUNMODE_PROTOCOL_TCP):
+			utils::make_tcp_id(&packet);
+			break;
+		case (TUNMODE_PROTOCOL_UDP):
+			utils::make_udp_id(&packet);
+			break;
+		default:
+			packet.set_protocol(TUNMODE_PROTOCOL_UNKNOWN);
+			break;
+		}
+
 		return size;
 	}
 
-	void SessionSocket::operator<<(const Packet& packet)
+	void SessionSocket::operator<(const Packet& packet)
 	{
 		this->send(packet);
 	}
 
-	void SessionSocket::operator>>(Packet& packet)
+	void SessionSocket::operator>(Packet& packet)
 	{
 		this->recv(packet);
+	}
+
+	int SessionSocket::get_read_pipe()
+	{
+		return this->session_pipe[0];
 	}
 }
