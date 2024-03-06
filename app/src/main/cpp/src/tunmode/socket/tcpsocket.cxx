@@ -1,6 +1,7 @@
 #include <tunmode/socket/tcpsocket.hpp>
 #include <tunmode/common/utils.hpp>
 #include <tunmode/definitions.hpp>
+#include <tunmode/tunmode.hpp>
 
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -11,8 +12,6 @@
 #include <errno.h>
 #include <cstdlib>
 #include <random>
-
-#include <misc/logger.hpp>
 
 namespace tunmode
 {
@@ -58,7 +57,6 @@ namespace tunmode
 
 		if (tcp_header->th_flags != TH_SYN)
 		{
-			LOGE_("Packet isn't SYN");
 			this->set_state(TCPSTATE_CLOSED);
 			this->reset(client_packet);
 			return -1;
@@ -66,19 +64,13 @@ namespace tunmode
 
 		this->set_state(TCPSTATE_SYN_RECEIVED);
 
-		LOGD_("Binding server socket...");
-		in_addr sv_addr;
-		inet_pton(AF_INET, "192.168.1.101", &sv_addr);
-		skt->bind(sv_addr, 0);
+		skt->bind(params::net_iface, 0);
 
-		LOGD_("Connecting server socket...");
 		if (skt->connect(this->server_addr, this->server_port) == -1)
 		{
-			LOGE_("Couldn't connect server socket");
 			this->reset(client_packet);
 			return -1;
 		}
-		LOGD_("Connected server socket");
 
 		utils::build_tcp_packet(&server_packet);
 		utils::point_headers_tcp(&server_packet, &ip_header, &tcp_header);
@@ -96,9 +88,7 @@ namespace tunmode
 		memcpy((void*)(tcp_header + 1), (void*)hs_opts, 12);
 		server_packet.set_size(server_packet.get_size() + 12);
 
-		LOGD_("Sending SYN/ACK to client");
 		this->send_tun(server_packet);
-		LOGD_("Waiting for ACK response");
 
 		do {
 			*this > client_packet;
@@ -107,12 +97,10 @@ namespace tunmode
 
 		if ((tcp_header->th_flags != TH_ACK) && (tcp_header->th_flags != TH_RST))
 		{
-			LOGE_("Packet wasn't ACK");
 			this->set_state(TCPSTATE_CLOSED);
 			this->reset(client_packet);
 			return -1;
 		}
-		LOGD_("Got ACK packet");
 
 		this->vars.snd.nxt++;
 		this->vars.snd.una = this->vars.snd.nxt;
@@ -359,8 +347,6 @@ namespace tunmode
 		default:
 			break;
 		}
-
-		LOGD_("recv switch ended");
 
 		return -1;
 	}

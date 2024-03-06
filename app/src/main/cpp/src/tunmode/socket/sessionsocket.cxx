@@ -5,8 +5,6 @@
 #include <unistd.h>
 #include <netinet/ip.h>
 
-#include <misc/logger.hpp>
-
 namespace tunmode
 {
 	TunSocket* SessionSocket::tun = nullptr;

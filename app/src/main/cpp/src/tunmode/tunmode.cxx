@@ -2,7 +2,6 @@
 #include <tunmode/socket/sessionsocket.hpp>
 #include <tunmode/manager/tcpmanager.hpp>
 #include <tunmode/manager/udpmanager.hpp>
-#include <misc/logger.hpp>
 
 #include <future>
 #include <string>
@@ -12,12 +11,15 @@
 #include <poll.h>
 #include <unistd.h>
 
+#include <misc/logger.hpp>
+
 namespace tunmode
 {
 	namespace params
 	{
 		JavaVM* jvm;
 		TunSocket tun;
+		in_addr net_iface;
 		in_addr dns_address;
 		jobject TunModeService_object;
 		std::atomic<bool> stop_flag;
@@ -51,10 +53,8 @@ namespace tunmode
 
 		if (status == JNI_EDETACHED) {
 			if (params::jvm->AttachCurrentThread(env, nullptr) != 0) {
-				LOGE(TAG, "Couldn't attach thread");
 				return 2; // Failed to attach
 			}
-			LOGI(TAG, "Attached JNIEnv*");
 			return 1; // Attached, need detach
 		}
 
@@ -87,7 +87,6 @@ namespace tunmode
 
 			if (ret == -1)
 			{
-				LOGE(TAG, "Poll Error");
 				break;
 			}
 			else if (ret == 0)

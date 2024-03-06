@@ -142,17 +142,17 @@ namespace tunmode::utils
 		LOGD_("------[Packet]------");
 		LOGD_("--------[IP]--------");
 
-		LOGD_("ip_hl: %u",  (unsigned)          ip_header->ip_hl);
-		LOGD_("ip_v: %u",   (unsigned)          ip_header->ip_v);
-		LOGD_("ip_tos: %u", (unsigned)          ip_header->ip_tos);
-		LOGD_("ip_len: %u", (unsigned)    ntohs(ip_header->ip_len));
-		LOGD_("ip_id: %u",  (unsigned)    ntohs(ip_header->ip_id));
-		LOGD_("ip_off: %u", (unsigned)    ntohs(ip_header->ip_off));
-		LOGD_("ip_ttl: %u", (unsigned)          ip_header->ip_ttl);
-		LOGD_("ip_p: %u",   (unsigned)          ip_header->ip_p);
-		LOGD_("ip_sum: %u", (unsigned)    ntohs(ip_header->ip_sum));
-		LOGD_("ip_src: %s",           inet_ntoa(ip_header->ip_src));
-		LOGD_("ip_dst: %s",           inet_ntoa(ip_header->ip_dst));
+		LOGD_("ip_hl: %u",  (unsigned)ip_header->ip_hl);
+		LOGD_("ip_v: %u",   (unsigned)ip_header->ip_v);
+		LOGD_("ip_tos: %u", (unsigned)ip_header->ip_tos);
+		LOGD_("ip_len: %u", (unsigned)ntohs(ip_header->ip_len));
+		LOGD_("ip_id: %u",  (unsigned)ntohs(ip_header->ip_id));
+		LOGD_("ip_off: %u", (unsigned)ntohs(ip_header->ip_off));
+		LOGD_("ip_ttl: %u", (unsigned)ip_header->ip_ttl);
+		LOGD_("ip_p: %u",   (unsigned)ip_header->ip_p);
+		LOGD_("ip_sum: %u", (unsigned)ntohs(ip_header->ip_sum));
+		LOGD_("ip_src: %s", inet_ntoa(ip_header->ip_src));
+		LOGD_("ip_dst: %s", inet_ntoa(ip_header->ip_dst));
 
 		LOGD_("-------[TCP]--------");
 

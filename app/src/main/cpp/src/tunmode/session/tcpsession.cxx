@@ -10,8 +10,6 @@
 #include <thread>
 #include <errno.h>
 
-#include <misc/logger.hpp>
-
 namespace tunmode
 {
 	TCPSession::TCPSession(TCPManager* manager, uint64_t id) : Session(id)
@@ -65,7 +63,6 @@ namespace tunmode
 				if (fds[0].revents)
 				{
 					_ret++;
-					LOGD_("poll2: revents == %d", (int)fds[0].revents);
 					if (fds[0].revents & POLLIN)
 					{
 						int status = cl_socket->recv(client_buffer);
@@ -93,13 +90,6 @@ namespace tunmode
 						{
 							fds[1].revents = POLLHUP;
 						}
-
-#ifndef RELEASE_MODE
-						if (server_buffer.get_size() == 0)
-						{
-							LOGD_("server_buffer.get_size() == 0");
-						}
-#endif
 					}
 
 					_ret++;
@@ -111,8 +101,6 @@ namespace tunmode
 				}
 			}
 		}
-
-		LOGE_("REACHED POLL2 END");
 
 		return -1;
 	}
@@ -128,10 +116,8 @@ namespace tunmode
 		TCPSocket* cl_socket = reinterpret_cast<TCPSocket*>(this->client_socket);
 		Socket*& sv_socket = this->server_socket;
 
-		LOGD_("Calling connect");
 		if (cl_socket->connect(sv_socket))
 		{
-			LOGE_("Connection failed");
 			cl_socket->close();
 			sv_socket->close();
 			return;
@@ -153,11 +139,9 @@ namespace tunmode
 			fds[0].revents = 0;
 			fds[1].revents = 0;
 			int ret = this->poll2(fds, client_buffer, server_buffer);
-			LOGD_("_loop: revents == %d", (int)fds[0].revents);
 
 			if (ret == -1)
 			{
-				LOGE_("Session poll error");
 				break;
 			}
 			else if (ret == 0)
@@ -168,36 +152,19 @@ namespace tunmode
 			{
 				if (fds[0].revents & (POLLERR | POLLHUP | POLLNVAL))
 				{
-					LOGD_("cl_socket revents == %d", fds[0].revents);
 					break;
 				}
 				else if (fds[0].revents & POLLIN)
 				{
-					LOGD_("-> server: %lu | %d", client_buffer.get_size(), (int)(fds[0].revents & POLLMSG ? MSG_MORE : 0));
 					sv_socket->send(&client_buffer, fds[0].revents & POLLMSG ? MSG_MORE : 0);
 				}
 
 				if (fds[1].revents & (POLLERR | POLLHUP | POLLNVAL))
 				{
-					LOGD_("sv_socket revents == %d", fds[1].revents);
-					if (fds[1].revents & POLLERR)
-					{
-						LOGE_("POLLERR: %s", std::strerror(errno));
-					}
-					if (fds[1].revents & POLLHUP)
-					{
-						LOGE_("POLLHUP");
-					}
-					if (fds[1].revents & POLLNVAL)
-					{
-						LOGE_("POLLNVAL");
-					}
-
 					break;
 				}
 				else if (fds[1].revents & POLLIN)
 				{
-					LOGD_("<- client: %lu", server_buffer.get_size());
 					cl_socket->send(server_buffer);
 				}
 			}

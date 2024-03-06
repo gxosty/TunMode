@@ -2,6 +2,7 @@
 #include <tunmode/common/utils.hpp>
 #include <tunmode/common/inbuffer.hpp>
 #include <tunmode/definitions.hpp>
+#include <tunmode/tunmode.hpp>
 
 #include <unistd.h>
 #include <cstring>
@@ -11,8 +12,6 @@
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <netinet/udp.h>
-
-#include <misc/logger.hpp>
 
 namespace tunmode
 {
@@ -39,9 +38,7 @@ namespace tunmode
 		this->server_addr = ip_header->ip_dst;
 		this->server_port = udp_header->uh_dport;
 
-		in_addr sv_addr;
-		inet_pton(AF_INET, "192.168.1.101", &sv_addr);
-		skt->bind(sv_addr, 0);
+		skt->bind(params::net_iface, 0);
 		skt->connect(this->server_addr, this->server_port);
 
 		InBuffer in_buffer = client_packet.get_data();

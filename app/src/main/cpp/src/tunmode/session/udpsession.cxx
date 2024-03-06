@@ -10,8 +10,6 @@
 #include <thread>
 #include <errno.h>
 
-#include <misc/logger.hpp>
-
 namespace tunmode
 {
 	UDPSession::UDPSession(UDPManager* manager, uint64_t id) : Session(id)
@@ -27,7 +25,7 @@ namespace tunmode
 
 	int UDPSession::poll(struct pollfd fds[2])
 	{
-		return ::poll(fds, 2, 60000);
+		return ::poll(fds, 2, this->poll_timeout);
 	}
 
 	void UDPSession::loop()

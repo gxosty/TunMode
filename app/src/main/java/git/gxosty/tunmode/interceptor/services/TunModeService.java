@@ -30,8 +30,25 @@ import git.gxosty.tunmode.R;
 import git.gxosty.tunmode.TunModeApp;
 
 public class TunModeService extends VpnService {
+	/**
+	 * TUN address
+	 *
+	 * Address on which to route device traffic
+	 **/
 	public static final String tunAddress = "10.0.0.1";
-	public static final String dnsAddress = "10.0.0.2";
+
+	/**
+	 * DNS Address
+	 *
+	 * Set dns resolver address (e.g. Google Public DNS 8.8.8.8)
+	 *
+	 * You may also set local imaginary fake IP address (e.g. 10.0.0.2)
+	 * to route dns queries over TUN socket. Note that you will handle
+	 * query packets yourself!
+	 *
+	 * Set to `null` if you want to use system dns resolver
+	 **/
+	public static final String dnsAddress = "8.8.8.8";
 
 	public static final String INTENT_EXTRA_OPERATION = "TunModeService_Operation";
 	public static final String NOTIFICATION_CHANNEL = "tun_mode_vpn_service_nc";
@@ -147,27 +164,53 @@ public class TunModeService extends VpnService {
 			return;
 		}
 
+		ConnectivityManager connectivityManager = this.getSystemService(ConnectivityManager.class);
+		Network currentNetwork = connectivityManager.getActiveNetwork();
+
+		if (currentNetwork == null) {
+			this.sendEvent(Event.NETWORK_ERROR);
+			return;
+		}
+
+		NetworkCapabilities networkCapabilities = connectivityManager.getNetworkCapabilities(currentNetwork);
+		LinkProperties linkProperties = connectivityManager.getLinkProperties(currentNetwork);
+
+		/* Check if network interface has access to internet */
+		// if (!networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+		// 	|| !networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)) {
+		// 	this.sendEvent(Event.NETWORK_ERROR);
+		// 	return;
+		// }
+
+		String networkInterface = linkProperties.getInterfaceName();
+
+		if (networkInterface == null) {
+			this.sendEvent(Event.DISCONNECTED);
+			return;
+		}
+
 		TunModeService.setState(State.CONNECTING);
 		this.sendEvent(Event.CONNECTING);
 
 		new Thread(() -> {
 			VpnService.Builder builder = new VpnService.Builder()
 				.addAddress(TunModeService.tunAddress, 32)
-				// .addRoute("0.0.0.0", 0)
-				// .addRoute("142.251.37.68", 32)
-				.addRoute(dnsAddress, 32)
-				.addDnsServer(dnsAddress) // route all dns queries as well
+				.addRoute("0.0.0.0", 0)
 				.setMtu(8192);
+
+			if (TunModeService.dnsAddress != null) {
+				// route dns queries as well
+				builder.addDnsServer(dnsAddress);
+			}
 
 			this.tunnel = builder.establish();
 
 			if (this.tunnel != null) {
 				TunModeService.setState(State.CONNECTED);
 				this.sendEvent(Event.CONNECTED);
-				TunModeService.tunnelOpenNative(this.tunnel.detachFd(), dnsAddress);
+				TunModeService.tunnelOpenNative(this.tunnel.detachFd(), networkInterface, dnsAddress);
 			} else {
 				TunModeService.setState(State.DISCONNECTED);
-				this.sendEvent(Event.DISCONNECTED);
 				this.tunnelClosed();
 			}
 		}).start();
@@ -208,6 +251,6 @@ public class TunModeService extends VpnService {
 	}
 
 	private static native void setupNative(Object service);
-	private static native void tunnelOpenNative(int fd, String dns_address);
+	private static native void tunnelOpenNative(int fd, String net_iface, String dns_address);
 	private static native void tunnelCloseNative();
 }

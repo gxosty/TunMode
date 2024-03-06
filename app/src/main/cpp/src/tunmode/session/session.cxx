@@ -2,13 +2,10 @@
 
 #include <thread>
 
-#include <misc/logger.hpp>
-
 namespace tunmode
 {
 	Session::Session(uint64_t id)
 	{
-		LOGD_("Session::Session");
 		this->id = id;
 	}
 
@@ -16,7 +13,6 @@ namespace tunmode
 	{
 		delete this->client_socket;
 		delete this->server_socket;
-		LOGD_("Session::~Session");
 	}
 
 	uint64_t Session::get_id()
