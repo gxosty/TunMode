@@ -42,8 +42,6 @@ namespace tunmode::utils
 		ip_header->ip_ttl = 128;
 		ip_header->ip_p = TUNMODE_PROTOCOL_TCP;
 
-		make_tcp_id(packet);
-
 		tcp_header->th_seq = 0;
 		tcp_header->th_ack = 0;
 		tcp_header->th_off = 5;
@@ -55,10 +53,35 @@ namespace tunmode::utils
 		packet->set_size(40);
 	}
 
-	void inline point_headers_tcp(const Packet* packet, ip** ip_header, tcphdr** tcp_header)
+	void build_udp_packet(Packet* packet)
+	{
+		struct ip* ip_header = (struct ip*)packet->get_buffer();
+		struct udphdr* udp_header = (struct udphdr*)((uintptr_t)packet->get_buffer() + 20);
+
+		ip_header->ip_hl = 5;
+		ip_header->ip_v = 4;
+		ip_header->ip_len = htons(28);
+		ip_header->ip_id = (uint16_t)rand();
+		ip_header->ip_off = 0;
+		ip_header->ip_ttl = 128;
+		ip_header->ip_p = TUNMODE_PROTOCOL_UDP;
+
+		udp_header->uh_ulen = 0;
+		udp_header->uh_sum = 0;
+
+		packet->set_size(28);
+	}
+
+	void point_headers_tcp(const Packet* packet, ip** ip_header, tcphdr** tcp_header)
 	{
 		*ip_header = (ip*)(packet->get_buffer());
 		*tcp_header = (tcphdr*)(ip_header[0]->ip_hl * 4 + (uintptr_t)packet->get_buffer());
+	}
+
+	void point_headers_udp(const Packet* packet, ip** ip_header, udphdr** udp_header)
+	{
+		*ip_header = (ip*)(packet->get_buffer());
+		*udp_header = (udphdr*)(ip_header[0]->ip_hl * 4 + (uintptr_t)packet->get_buffer());
 	}
 
 	void finalize_packet_tcp(Packet* packet)
@@ -70,6 +93,20 @@ namespace tunmode::utils
 		ip_header->ip_len = htons(packet->get_size());
 		ip_header->ip_sum = cksumIp((struct iphdr*)ip_header);
 		tcp_header->th_sum = cksumTcp((struct iphdr*)ip_header, tcp_header);
+	}
+
+	void finalize_packet_udp(Packet* packet)
+	{
+		ip* ip_header;
+		udphdr* udp_header;
+		point_headers_udp(packet, &ip_header, &udp_header);
+
+		InBuffer in_buffer = packet->get_data();
+
+		ip_header->ip_len = htons(packet->get_size());
+		ip_header->ip_sum = cksumIp((struct iphdr*)ip_header);
+		udp_header->uh_ulen = htons(in_buffer.get_size() + 8);
+		udp_header->uh_sum = cksumUdp((struct iphdr*)ip_header, udp_header);
 	}
 
 	/* Call only in one thread */
@@ -130,5 +167,10 @@ namespace tunmode::utils
 
 		LOGD_("--------------------");
 #endif
+	}
+
+	void print_packet_udp(Packet* packet)
+	{
+
 	}
 }

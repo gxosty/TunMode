@@ -6,11 +6,10 @@
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_git_gxosty_tunmode_interceptor_services_TunModeService_tunnelOpenNative(JNIEnv* env, jclass cls, int fd, jstring dns_address, jstring network_interface)
+Java_git_gxosty_tunmode_interceptor_services_TunModeService_tunnelOpenNative(JNIEnv* env, jclass cls, int fd, jstring dns_address)
 {
+	tunmode::params::dns_address.s_addr = 0;
 	tunmode::params::tun = fd;
-	// tunmode::params::tun_addr = tun_address;
-	tunmode::params::tun_addr.s_addr = 0;
 	tunmode::open_tunnel();
 }
 

@@ -16,6 +16,8 @@ namespace tunmode
 		SessionSocket();
 		virtual ~SessionSocket();
 
+		virtual size_t send_tun(Packet& packet); // send to tun iface
+
 		virtual size_t send(const Packet& packet);
 		virtual size_t send(const Buffer& buffer) = 0;
 		virtual size_t recv(Packet& packet);

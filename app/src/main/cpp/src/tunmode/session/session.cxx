@@ -6,8 +6,6 @@
 
 namespace tunmode
 {
-	in_addr Session::iface_addr = in_addr{0};
-
 	Session::Session(uint64_t id)
 	{
 		LOGD_("Session::Session");

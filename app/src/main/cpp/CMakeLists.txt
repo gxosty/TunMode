@@ -48,18 +48,25 @@ add_library(tunmode SHARED
 	main.cxx
 
 	src/tunmode/tunmode.cxx
+
 	src/tunmode/common/inbuffer.cxx
 	src/tunmode/common/buffer.cxx
 	src/tunmode/common/packet.cxx
 	src/tunmode/common/utils.cxx
+
 	src/tunmode/session/session.cxx
 	src/tunmode/session/tcpsession.cxx
+	src/tunmode/session/udpsession.cxx
+
 	src/tunmode/manager/sessionmanager.cxx
 	src/tunmode/manager/tcpmanager.cxx
+	src/tunmode/manager/udpmanager.cxx
+
 	src/tunmode/socket/socket.cxx
 	src/tunmode/socket/sessionsocket.cxx
 	src/tunmode/socket/tunsocket.cxx
 	src/tunmode/socket/tcpsocket.cxx
+	src/tunmode/socket/udpsocket.cxx
 
 	src/RawSocket/CheckSum.cpp
 )

@@ -25,6 +25,11 @@ namespace tunmode
 		::close(this->session_pipe[1]);
 	}
 
+	size_t SessionSocket::send_tun(Packet& packet)
+	{
+		return SessionSocket::tun->send(&packet);
+	}
+
 	size_t SessionSocket::send(const Packet& packet)
 	{
 		return ::write(this->session_pipe[1], packet.get_buffer(), packet.get_size());

@@ -1,6 +1,7 @@
 #include <tunmode/tunmode.hpp>
 #include <tunmode/socket/sessionsocket.hpp>
 #include <tunmode/manager/tcpmanager.hpp>
+#include <tunmode/manager/udpmanager.hpp>
 #include <misc/logger.hpp>
 
 #include <future>
@@ -17,7 +18,7 @@ namespace tunmode
 	{
 		JavaVM* jvm;
 		TunSocket tun;
-		in_addr tun_addr;
+		in_addr dns_address;
 		jobject TunModeService_object;
 		std::atomic<bool> stop_flag;
 		
@@ -26,6 +27,7 @@ namespace tunmode
 	}
 
 	TCPManager tcp_session_manager;
+	UDPManager udp_session_manager;
 
 	void set_jvm(JavaVM* jvm)
 	{
@@ -106,6 +108,7 @@ namespace tunmode
 						break;
 
 					case TUNMODE_PROTOCOL_UDP:
+						udp_session_manager.handle_packet(packet);
 						break;
 
 					default:

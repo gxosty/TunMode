@@ -11,8 +11,6 @@ namespace tunmode
 	class Session
 	{
 	public:
-		static in_addr iface_addr;
-
 		Session(uint64_t id);
 		virtual ~Session();
 

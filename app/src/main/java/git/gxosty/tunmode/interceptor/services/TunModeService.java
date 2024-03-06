@@ -30,8 +30,8 @@ import git.gxosty.tunmode.R;
 import git.gxosty.tunmode.TunModeApp;
 
 public class TunModeService extends VpnService {
-	public static final String tunAddress = "192.168.0.127";
-	public static final String dnsAddress = "192.168.0.128";
+	public static final String tunAddress = "10.0.0.1";
+	public static final String dnsAddress = "10.0.0.2";
 
 	public static final String INTENT_EXTRA_OPERATION = "TunModeService_Operation";
 	public static final String NOTIFICATION_CHANNEL = "tun_mode_vpn_service_nc";
@@ -153,10 +153,10 @@ public class TunModeService extends VpnService {
 		new Thread(() -> {
 			VpnService.Builder builder = new VpnService.Builder()
 				.addAddress(TunModeService.tunAddress, 32)
-				.addRoute("0.0.0.0", 0)
+				// .addRoute("0.0.0.0", 0)
 				// .addRoute("142.251.37.68", 32)
-				// .addRoute(dnsAddress, 32)
-				// .addDnsServer(dnsAddress) // route all dns queries as well
+				.addRoute(dnsAddress, 32)
+				.addDnsServer(dnsAddress) // route all dns queries as well
 				.setMtu(8192);
 
 			this.tunnel = builder.establish();
@@ -164,7 +164,7 @@ public class TunModeService extends VpnService {
 			if (this.tunnel != null) {
 				TunModeService.setState(State.CONNECTED);
 				this.sendEvent(Event.CONNECTED);
-				TunModeService.tunnelOpenNative(this.tunnel.detachFd(), dnsAddress, "wlan0");
+				TunModeService.tunnelOpenNative(this.tunnel.detachFd(), dnsAddress);
 			} else {
 				TunModeService.setState(State.DISCONNECTED);
 				this.sendEvent(Event.DISCONNECTED);
@@ -208,6 +208,6 @@ public class TunModeService extends VpnService {
 	}
 
 	private static native void setupNative(Object service);
-	private static native void tunnelOpenNative(int fd, String dns_address, String network_interface);
+	private static native void tunnelOpenNative(int fd, String dns_address);
 	private static native void tunnelCloseNative();
 }

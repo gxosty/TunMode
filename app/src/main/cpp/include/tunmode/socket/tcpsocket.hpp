@@ -51,7 +51,7 @@ namespace tunmode
 
 		int connect(Socket* skt);
 
-		size_t send_tun(Packet& packet);
+		size_t send_tun(Packet& packet) override;
 		size_t send(const Buffer& buffer) override;
 		size_t recv(Buffer& buffer) override;
 

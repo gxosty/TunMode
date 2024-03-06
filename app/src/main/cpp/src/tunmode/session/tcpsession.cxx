@@ -129,8 +129,13 @@ namespace tunmode
 		Socket*& sv_socket = this->server_socket;
 
 		LOGD_("Calling connect");
-		cl_socket->connect(sv_socket);
-		LOGD_("Connect end");
+		if (cl_socket->connect(sv_socket))
+		{
+			LOGE_("Connection failed");
+			cl_socket->close();
+			sv_socket->close();
+			return;
+		}
 
 		struct pollfd fds[2];
 

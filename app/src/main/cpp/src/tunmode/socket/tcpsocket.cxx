@@ -1,5 +1,6 @@
 #include <tunmode/socket/tcpsocket.hpp>
 #include <tunmode/common/utils.hpp>
+#include <tunmode/definitions.hpp>
 
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -27,10 +28,12 @@ namespace tunmode
 
 	int TCPSocket::connect(Socket* skt)
 	{
-		static constexpr char hs_opts[] = {2, 4, 5, 180, 1, 3, 3, 8, 1, 1, 4, 2};
+		static constexpr char hs_opts[] = {2, 4, 31, 216, 1, 3, 3, 8, 1, 1, 4, 2};
 
 		Packet client_packet;
+		client_packet.set_protocol(TUNMODE_PROTOCOL_TCP);
 		Packet server_packet;
+		server_packet.set_protocol(TUNMODE_PROTOCOL_TCP);
 
 		LOGD_("Getting SYN...");
 		*this > client_packet;
@@ -122,12 +125,13 @@ namespace tunmode
 	size_t TCPSocket::send_tun(Packet& packet)
 	{
 		utils::finalize_packet_tcp(&packet);
-		return SessionSocket::tun->send(&packet);
+		return SessionSocket::send_tun(packet);
 	}
 
 	size_t TCPSocket::send(const Buffer& buffer)
 	{
 		Packet packet;
+		packet.set_protocol(TUNMODE_PROTOCOL_TCP);
 		ip* ip_header;
 		tcphdr* tcp_header;
 
@@ -155,6 +159,7 @@ namespace tunmode
 	size_t TCPSocket::recv(Buffer& buffer)
 	{
 		Packet packet;
+		packet.set_protocol(TUNMODE_PROTOCOL_TCP);
 		ip* ip_header;
 		tcphdr* tcp_header;
 
@@ -203,6 +208,7 @@ namespace tunmode
 					{
 						LOGD_("PSH -> Sending ACK");
 						Packet client_packet;
+						client_packet.set_protocol(TUNMODE_PROTOCOL_TCP);
 						ip* ip_header2;
 						tcphdr* tcp_header2;
 						utils::build_tcp_packet(&client_packet);
@@ -237,6 +243,7 @@ namespace tunmode
 				{
 					LOGD_("FIN -> Sending ACK");
 					Packet client_packet;
+					client_packet.set_protocol(TUNMODE_PROTOCOL_TCP);
 					ip* ip_header2;
 					tcphdr* tcp_header2;
 					utils::build_tcp_packet(&client_packet);
@@ -284,6 +291,7 @@ namespace tunmode
 				if (tcp_header->th_flags == (TH_FIN | TH_ACK))
 				{
 					Packet client_packet;
+					client_packet.set_protocol(TUNMODE_PROTOCOL_TCP);
 					ip* ip_header2;
 					tcphdr* tcp_header2;
 
@@ -373,6 +381,7 @@ namespace tunmode
 		if (state == TCPSTATE_ESTABLISHED)
 		{
 			Packet client_packet;
+			client_packet.set_protocol(TUNMODE_PROTOCOL_TCP);
 			ip* ip_header;
 			tcphdr* tcp_header;
 
@@ -429,6 +438,7 @@ namespace tunmode
 		else if (state == TCPSTATE_CLOSE_WAIT)
 		{
 			Packet client_packet;
+			client_packet.set_protocol(TUNMODE_PROTOCOL_TCP);
 			ip* ip_header;
 			tcphdr* tcp_header;
 
@@ -490,6 +500,7 @@ namespace tunmode
 			}
 
 			Packet client_packet;
+			client_packet.set_protocol(TUNMODE_PROTOCOL_TCP);
 			utils::build_tcp_packet(&client_packet);
 			utils::point_headers_tcp(&client_packet, &ip_header, &tcp_header);
 
@@ -518,6 +529,7 @@ namespace tunmode
 				|| (state == TCPSTATE_LISTEN))
 		{
 			Packet client_packet;
+			client_packet.set_protocol(TUNMODE_PROTOCOL_TCP);
 			utils::build_tcp_packet(&client_packet);
 			utils::point_headers_tcp(&client_packet, &ip_header, &tcp_header);
 
@@ -544,6 +556,7 @@ namespace tunmode
 		else
 		{
 			Packet client_packet;
+			client_packet.set_protocol(TUNMODE_PROTOCOL_TCP);
 			utils::build_tcp_packet(&client_packet);
 			utils::point_headers_tcp(&client_packet, &ip_header, &tcp_header);
 
