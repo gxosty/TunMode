@@ -42,13 +42,14 @@ public class TunModeService extends VpnService {
 	 *
 	 * Set dns resolver address (e.g. Google Public DNS 8.8.8.8)
 	 *
-	 * You may also set local imaginary fake IP address (e.g. 10.0.0.2)
-	 * to route dns queries over TUN socket. Note that you will handle
-	 * query packets yourself!
+	 * You may also set fake IP address (e.g. 10.0.0.2)
+	 * to route dns queries over TUN socket. Note that you
+	 * will need to identify and handle query packets yourself!
 	 *
 	 * Set to `null` if you want to use system dns resolver
 	 **/
-	public static final String dnsAddress = "8.8.8.8";
+	// public static final String dnsAddress = "8.8.8.8";
+	public static final String dnsAddress = null;
 
 	public static final String INTENT_EXTRA_OPERATION = "TunModeService_Operation";
 	public static final String NOTIFICATION_CHANNEL = "tun_mode_vpn_service_nc";
@@ -196,7 +197,7 @@ public class TunModeService extends VpnService {
 			VpnService.Builder builder = new VpnService.Builder()
 				.addAddress(TunModeService.tunAddress, 32)
 				.addRoute("0.0.0.0", 0)
-				.setMtu(8192);
+				.setMtu(1500);
 
 			if (TunModeService.dnsAddress != null) {
 				// route dns queries as well

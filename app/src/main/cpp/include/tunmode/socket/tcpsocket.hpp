@@ -52,6 +52,7 @@ namespace tunmode
 		int connect(Socket* skt);
 
 		size_t send_tun(Packet& packet) override;
+		size_t send(const Packet& packet) override;
 		size_t send(const Buffer& buffer) override;
 		size_t recv(Buffer& buffer) override;
 
@@ -67,6 +68,8 @@ namespace tunmode
 		u_short client_port;
 		in_addr server_addr;
 		u_short server_port;
+
+		bool syn_recved;
 
 		TCPVars vars;
 		TCPState state;

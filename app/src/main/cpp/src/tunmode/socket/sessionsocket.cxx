@@ -3,7 +3,10 @@
 #include <tunmode/definitions.hpp>
 
 #include <unistd.h>
+#include <fcntl.h>
 #include <netinet/ip.h>
+
+#include <misc/logger.hpp>
 
 namespace tunmode
 {
@@ -15,6 +18,7 @@ namespace tunmode
 		this->session_pipe[1] = 0;
 
 		pipe2(this->session_pipe, O_DIRECT);
+		// auto res = fcntl(this->session_pipe[1], F_SETPIPE_SZ, 16384);
 	}
 
 	SessionSocket::~SessionSocket()

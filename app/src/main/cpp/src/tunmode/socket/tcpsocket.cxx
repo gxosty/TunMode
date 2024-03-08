@@ -13,11 +13,14 @@
 #include <cstdlib>
 #include <random>
 
+#include <misc/logger.hpp>
+
 namespace tunmode
 {
 	TCPSocket::TCPSocket() : SessionSocket()
 	{
 		this->state = TCPSTATE_LISTEN;
+		this->syn_recved = false;
 	}
 
 	TCPSocket::~TCPSocket()
@@ -27,16 +30,14 @@ namespace tunmode
 
 	int TCPSocket::connect(Socket* skt)
 	{
-		static constexpr char hs_opts[] = {2, 4, 31, 216, 1, 3, 3, 8, 1, 1, 4, 2};
+		static constexpr char hs_opts[] = {2, 4, 5, 180, 1, 3, 3, 8, 1, 1, 4, 2};
 
 		Packet client_packet;
 		client_packet.set_protocol(TUNMODE_PROTOCOL_TCP);
 		Packet server_packet;
 		server_packet.set_protocol(TUNMODE_PROTOCOL_TCP);
 
-		LOGD_("Getting SYN...");
 		*this > client_packet;
-		LOGD_("Got packet");
 
 		ip* ip_header;
 		tcphdr* tcp_header;
@@ -116,6 +117,24 @@ namespace tunmode
 		return SessionSocket::send_tun(packet);
 	}
 
+	size_t TCPSocket::send(const Packet& packet)
+	{
+		ip* ip_header;
+		tcphdr* tcp_header;
+		utils::point_headers_tcp((Packet*)&packet, &ip_header, &tcp_header);
+
+		if (tcp_header->th_flags == TH_SYN)
+		{
+			if (this->syn_recved)
+			{
+				return packet.get_size();
+			}
+			this->syn_recved = true;
+		}
+
+		return SessionSocket::send(packet);
+	}
+
 	size_t TCPSocket::send(const Buffer& buffer)
 	{
 		Packet packet;
@@ -188,13 +207,10 @@ namespace tunmode
 					}
 
 					buffer(in_buffer.get_buffer(), in_buffer.get_size());
-					LOGD_("Buffer size: %lu", buffer.get_size());
-					LOGD_("SEQ: %u", ntohl(tcp_header->th_seq));
 					this->vars.rcv.nxt += in_buffer.get_size();
 
 					if (tcp_header->th_flags != TH_ACK)
 					{
-						LOGD_("PSH -> Sending ACK");
 						Packet client_packet;
 						client_packet.set_protocol(TUNMODE_PROTOCOL_TCP);
 						ip* ip_header2;
@@ -229,7 +245,6 @@ namespace tunmode
 				}
 				else if (tcp_header->th_flags & TH_FIN)
 				{
-					LOGD_("FIN -> Sending ACK");
 					Packet client_packet;
 					client_packet.set_protocol(TUNMODE_PROTOCOL_TCP);
 					ip* ip_header2;
@@ -258,6 +273,7 @@ namespace tunmode
 				}
 				else
 				{
+					utils::print_packet_tcp(&packet);
 					this->reset(packet);
 					buffer.set_size(0);
 					return -1;

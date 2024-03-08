@@ -18,7 +18,6 @@ Java_git_gxosty_tunmode_interceptor_services_TunModeService_tunnelOpenNative(JNI
 	tunmode::params::dns_address.s_addr = 0;
 
 	const char* str_net_iface = env->GetStringUTFChars(net_iface, NULL);
-	const char* str_dns_address = env->GetStringUTFChars(dns_address, NULL);
 
 	struct ifreq ifr;
 	int if_fd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -30,10 +29,14 @@ Java_git_gxosty_tunmode_interceptor_services_TunModeService_tunnelOpenNative(JNI
 	close(if_fd);
 	tunmode::params::net_iface = ((struct sockaddr_in*)&ifr.ifr_addr)->sin_addr;
 
-	inet_pton(AF_INET, str_dns_address, &tunmode::params::dns_address);
-
 	env->ReleaseStringUTFChars(net_iface, str_net_iface);
-	env->ReleaseStringUTFChars(dns_address, str_dns_address);
+
+	if (dns_address)
+	{
+		const char* str_dns_address = env->GetStringUTFChars(dns_address, NULL);
+		inet_pton(AF_INET, str_dns_address, &tunmode::params::dns_address);
+		env->ReleaseStringUTFChars(dns_address, str_dns_address);
+	}
 
 	tunmode::open_tunnel();
 }

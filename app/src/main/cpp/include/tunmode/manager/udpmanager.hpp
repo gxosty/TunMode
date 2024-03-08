@@ -15,7 +15,7 @@ namespace tunmode
 		void handle_packet(const Packet& packet) override;
 
 	private:
-		Session* add(uintptr_t id) override;
+		Session* add(uint64_t id) override;
 
 		friend class UDPSession;
 	};

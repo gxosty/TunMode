@@ -5,20 +5,25 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+#include <misc/logger.hpp>
+
 namespace tunmode
 {
 	Socket::Socket(int domain, int type, int protocol) : closed{false}
 	{
+		LOGD_("Socket::Socket()");
 		this->socket = ::socket(domain, type, protocol);
 	}
 
 	Socket::Socket(int socket) : closed{false}
 	{
+		LOGD_("Socket::Socket()");
 		this->socket = socket;
 	}
 
 	Socket::~Socket()
 	{
+		LOGD_("Socket::~Socket()");
 		if (!this->closed)
 			::close(this->socket);
 	}
