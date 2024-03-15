@@ -1,7 +1,6 @@
 #include <tunmode/session/tcpsession.hpp>
 
 #include <tunmode/tunmode.hpp>
-#include <tunmode/socket/socket.hpp>
 #include <tunmode/socket/sessionsocket.hpp>
 #include <tunmode/socket/tcpsocket.hpp>
 #include <tunmode/manager/tcpmanager.hpp>
@@ -42,13 +41,23 @@ namespace tunmode
 		{
 			_ret = 0;
 
-			if ((cl_socket_state == TCPSTATE_CLOSED) || (cl_socket_state == TCPSTATE_TIME_WAIT))
+			// if (cl_socket_state == TCPSTATE_CLOSED)
+			// {
+			// 	fds[0].revents = POLLNVAL;
+			// 	return 1;
+			// }
+
+			int fd_count = 2;
+			int poll_timeout = 120000;
+
+			if ((cl_socket_state == TCPSTATE_TIME_WAIT) || (cl_socket_state == TCPSTATE_CLOSED))
 			{
-				fds[0].revents = POLLNVAL;
-				return 1;
+				fd_count = 1;
+				poll_timeout = 15000;
+				fds[1].revents = 0;
 			}
 
-			ret = ::poll(fds, 2, 120000);
+			ret = ::poll(fds, fd_count, poll_timeout);
 
 			if (ret == -1)
 			{
@@ -56,6 +65,12 @@ namespace tunmode
 			}
 			else if (ret == 0)
 			{
+				if ((cl_socket_state == TCPSTATE_TIME_WAIT) || (cl_socket_state == TCPSTATE_CLOSED))
+				{
+					fds[0].revents = POLLNVAL;
+					return 1;
+				}
+
 				return 0;
 			}
 			else
@@ -72,27 +87,52 @@ namespace tunmode
 						}
 						else if (status == -1)
 						{
-							fds[0].revents = POLLERR;
+							if ((errno == EWOULDBLOCK) || (errno == EAGAIN))
+							{
+								fds[0].revents = 0;
+								ret--;
+							}
+							else
+							{
+								fds[0].revents = POLLERR;
+							}
 						}
 						else if (client_buffer.get_size() == 0)
 						{
-							fds[0].revents = 0;
-							_ret--;
+							if (cl_socket->get_state() == TCPSTATE_CLOSE_WAIT)
+							{
+								fds[0].revents = POLLHUP;
+							}
+							else
+							{
+								fds[0].revents = 0;
+								_ret--;
+							}
 						}
 					}
 				}
 
 				if (fds[1].revents)
 				{
+					_ret++;
+
 					if (fds[1].revents & POLLIN)
 					{
-						if (sv_socket->recv(&server_buffer) == 0)
+						size_t sz = sv_socket->recv(&server_buffer, MSG_DONTWAIT);
+
+						if (sz == 0)
 						{
 							fds[1].revents = POLLHUP;
 						}
+						else if (sz == -1)
+						{
+							if ((errno == EWOULDBLOCK) || (errno == EAGAIN))
+							{
+								fds[1].revents = 0;
+								ret--;
+							}
+						}
 					}
-
-					_ret++;
 				}
 
 				if (_ret)

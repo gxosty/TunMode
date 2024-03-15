@@ -33,7 +33,6 @@ public class MainActivity extends AppCompatActivity implements TunModeService.Ev
 			} else {
 				Toast.makeText(this, "Try Again", Toast.LENGTH_SHORT).show();
 			}
-			
 		});
 
 		TunModeService.setEventListener(this);

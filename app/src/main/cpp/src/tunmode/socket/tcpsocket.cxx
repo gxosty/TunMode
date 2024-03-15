@@ -21,6 +21,7 @@ namespace tunmode
 	{
 		this->state = TCPSTATE_LISTEN;
 		this->syn_recved = false;
+		this->last_chksum = 0;
 	}
 
 	TCPSocket::~TCPSocket()
@@ -30,7 +31,7 @@ namespace tunmode
 
 	int TCPSocket::connect(Socket* skt)
 	{
-		static constexpr char hs_opts[] = {2, 4, 5, 180, 1, 3, 3, 8, 1, 1, 4, 2};
+		static constexpr char hs_opts[] = {2, 4, 15, 160, 1, 3, 3, 8, 1, 1, 4, 2};
 
 		Packet client_packet;
 		client_packet.set_protocol(TUNMODE_PROTOCOL_TCP);
@@ -107,6 +108,7 @@ namespace tunmode
 		this->vars.snd.una = this->vars.snd.nxt;
 
 		this->set_state(TCPSTATE_ESTABLISHED);
+		// stk->set_nonblocking(true);
 
 		return 0;
 	}
@@ -175,6 +177,14 @@ namespace tunmode
 
 		utils::point_headers_tcp(&packet, &ip_header, &tcp_header);
 
+		if (this->last_chksum == tcp_header->th_sum)
+		{
+			buffer.set_size(0);
+			return 0;
+		}
+
+		this->last_chksum = tcp_header->th_sum;
+
 		// if (in_buffer.get_size() == 0)
 		// {
 		// 	if (!((this->vars.rcv.nxt <= ntohl(tcp_header->th_seq))
@@ -194,6 +204,8 @@ namespace tunmode
 		// 	}
 		// }
 
+		this->vars.rcv.nxt += in_buffer.get_size();
+
 		switch (this->get_state())
 		{
 		case TCPSTATE_ESTABLISHED:
@@ -207,7 +219,6 @@ namespace tunmode
 					}
 
 					buffer(in_buffer.get_buffer(), in_buffer.get_size());
-					this->vars.rcv.nxt += in_buffer.get_size();
 
 					if (tcp_header->th_flags != TH_ACK)
 					{
@@ -245,14 +256,19 @@ namespace tunmode
 				}
 				else if (tcp_header->th_flags & TH_FIN)
 				{
+					if ((this->vars.snd.una < ntohl(tcp_header->th_ack))
+						&& (ntohl(tcp_header->th_ack) <= this->vars.snd.nxt))
+					{
+						this->vars.snd.una = ntohl(tcp_header->th_ack);
+					}
+
 					Packet client_packet;
 					client_packet.set_protocol(TUNMODE_PROTOCOL_TCP);
 					ip* ip_header2;
 					tcphdr* tcp_header2;
 					utils::build_tcp_packet(&client_packet);
 					utils::point_headers_tcp(&client_packet, &ip_header2, &tcp_header2);
-					
-					// this->vars.snd.nxt += 1;
+
 					this->vars.rcv.nxt += 1;
 
 					ip_header2->ip_src = this->server_addr;
@@ -260,21 +276,26 @@ namespace tunmode
 					ip_header2->ip_dst = this->client_addr;
 					tcp_header2->th_dport = this->client_port;
 
-					tcp_header2->th_seq = htonl(this->vars.snd.nxt);
-					tcp_header2->th_ack = htonl(this->vars.rcv.nxt);
+					tcp_header2->th_seq = tcp_header->th_ack;
+					tcp_header2->th_ack = htonl(ntohl(tcp_header->th_seq) + 0x1);
 					tcp_header2->th_flags = TH_ACK;
-
 
 					this->set_state(TCPSTATE_CLOSE_WAIT);
 					this->send_tun(client_packet);
-
 					buffer.set_size(0);
 					return 0;
 				}
 				else
 				{
 					utils::print_packet_tcp(&packet);
-					this->reset(packet);
+					LOGW_("^ Unknown TCP flags during ESTABLISHED state");
+
+					if (!(tcp_header->th_flags & TH_RST))
+					{
+						LOGW_("^ RST Sent");
+						this->reset(packet);
+					}
+
 					buffer.set_size(0);
 					return -1;
 				}
@@ -317,6 +338,9 @@ namespace tunmode
 				}
 				else
 				{
+					utils::print_packet_tcp(&packet);
+					LOGW_("^ Unknown TCP flags during TIME_WAIT state");
+					LOGW_("^ RST Sent");
 					this->reset(packet);
 				}
 			}
@@ -332,6 +356,9 @@ namespace tunmode
 				}
 				else
 				{
+					utils::print_packet_tcp(&packet);
+					LOGW_("^ Unknown TCP flags during CLOSE_WAIT state");
+					LOGW_("^ RST Sent");
 					this->reset(packet);
 				}
 			}
@@ -347,6 +374,9 @@ namespace tunmode
 				}
 				else
 				{
+					utils::print_packet_tcp(&packet);
+					LOGW_("^ Unknown TCP flags during LAST_ACK state");
+					LOGW_("^ RST Sent");
 					this->reset(packet);
 				}
 			}
@@ -434,6 +464,8 @@ namespace tunmode
 			tcp_header->th_ack = htonl(this->vars.rcv.nxt);
 			tcp_header->th_flags = TH_ACK;
 
+			LOGD_("ESTABLISHED | Closing connection");
+
 			this->set_state(TCPSTATE_TIME_WAIT);
 			this->send_tun(client_packet);
 		}
@@ -460,6 +492,8 @@ namespace tunmode
 			this->set_state(TCPSTATE_LAST_ACK);
 
 			*this > client_packet; // assume packet is ACK of FIN
+
+			LOGD_("CLOSE_WAIT | Closing connection");
 
 			this->set_state(TCPSTATE_CLOSED);
 		}
@@ -575,5 +609,7 @@ namespace tunmode
 			this->send_tun(client_packet);
 			this->set_state(TCPSTATE_CLOSED);
 		}
+
+		this->set_state(TCPSTATE_CLOSED);
 	}
 }

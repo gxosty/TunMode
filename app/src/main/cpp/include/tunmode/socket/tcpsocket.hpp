@@ -76,5 +76,7 @@ namespace tunmode
 
 		void set_state(TCPState state);
 		void reset(const Packet& packet);
+		
+		uint16_t last_chksum;
 	};
 }
