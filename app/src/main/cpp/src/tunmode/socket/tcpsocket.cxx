@@ -21,7 +21,6 @@ namespace tunmode
 	{
 		this->state = TCPSTATE_LISTEN;
 		this->syn_recved = false;
-		this->last_chksum = 0;
 	}
 
 	TCPSocket::~TCPSocket()
@@ -177,32 +176,24 @@ namespace tunmode
 
 		utils::point_headers_tcp(&packet, &ip_header, &tcp_header);
 
-		if (this->last_chksum == tcp_header->th_sum)
+		if (in_buffer.get_size() == 0)
 		{
-			buffer.set_size(0);
-			return 0;
+			if (!((this->vars.rcv.nxt <= ntohl(tcp_header->th_seq))
+				&& (ntohl(tcp_header->th_seq) < (this->vars.rcv.nxt + this->vars.rcv.wnd))))
+			{
+				buffer.set_size(0);
+				return 0;
+			}
 		}
-
-		this->last_chksum = tcp_header->th_sum;
-
-		// if (in_buffer.get_size() == 0)
-		// {
-		// 	if (!((this->vars.rcv.nxt <= ntohl(tcp_header->th_seq))
-		// 		&& (ntohl(tcp_header->th_seq) < (this->vars.rcv.nxt + this->vars.rcv.wnd))))
-		// 	{
-		// 		buffer.set_size(0);
-		// 		return 0;
-		// 	}
-		// }
-		// else
-		// {
-		// 	if ((!((this->vars.rcv.nxt <= ntohl(tcp_header->th_seq)) && (ntohl(tcp_header->th_seq) < (this->vars.rcv.nxt + this->vars.rcv.wnd))))
-		// 		|| !((this->vars.rcv.nxt <= (ntohl(tcp_header->th_seq) + in_buffer.get_size())) && ((ntohl(tcp_header->th_seq) + in_buffer.get_size()) <= (this->vars.rcv.nxt + this->vars.rcv.wnd))))
-		// 	{
-		// 		buffer.set_size(0);
-		// 		return 0;
-		// 	}
-		// }
+		else
+		{
+			if ((!((this->vars.rcv.nxt <= ntohl(tcp_header->th_seq)) && (ntohl(tcp_header->th_seq) < (this->vars.rcv.nxt + this->vars.rcv.wnd))))
+				|| !((this->vars.rcv.nxt <= (ntohl(tcp_header->th_seq) + in_buffer.get_size() - 1)) && ((ntohl(tcp_header->th_seq) + in_buffer.get_size() - 1) < (this->vars.rcv.nxt + this->vars.rcv.wnd))))
+			{
+				buffer.set_size(0);
+				return 0;
+			}
+		}
 
 		this->vars.rcv.nxt += in_buffer.get_size();
 
@@ -564,6 +555,8 @@ namespace tunmode
 				|| (state == TCPSTATE_SYN_RECEIVED)
 				|| (state == TCPSTATE_LISTEN))
 		{
+			auto tcp_flags = tcp_header->th_flags;
+
 			Packet client_packet;
 			client_packet.set_protocol(TUNMODE_PROTOCOL_TCP);
 			utils::build_tcp_packet(&client_packet);
@@ -584,7 +577,7 @@ namespace tunmode
 			else
 			{
 				tcp_header->th_seq = 0;
-				tcp_header->th_ack = htonl(ntohl(pkt_seq) + data_size);
+				tcp_header->th_ack = htonl(ntohl(pkt_seq) + data_size + (tcp_flags == TH_SYN ? 1 : 0));
 			}
 
 			this->send_tun(client_packet);
@@ -607,7 +600,6 @@ namespace tunmode
 			tcp_header->th_ack = 0;
 
 			this->send_tun(client_packet);
-			this->set_state(TCPSTATE_CLOSED);
 		}
 
 		this->set_state(TCPSTATE_CLOSED);

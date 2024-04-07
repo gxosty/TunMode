@@ -5,6 +5,7 @@
 
 #include <unordered_map>
 #include <cstdint>
+#include <mutex>
 
 namespace tunmode
 {
@@ -16,6 +17,7 @@ namespace tunmode
 		virtual void handle_packet(const Packet& packet) = 0;
 
 	protected:
+		std::mutex mtx;
 		std::unordered_map<uint64_t, Session*> sessions;
 
 		virtual Session* add(uint64_t id) = 0;

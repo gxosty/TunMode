@@ -8,6 +8,7 @@ namespace tunmode
 
 	void UDPManager::handle_packet(const Packet& packet)
 	{
+		std::lock_guard<std::mutex> lock(this->mtx);
 		UDPSession* session = reinterpret_cast<UDPSession*>(this->get_or_add(packet.get_id()));
 		*(session->get_client_socket()) < packet;
 	}

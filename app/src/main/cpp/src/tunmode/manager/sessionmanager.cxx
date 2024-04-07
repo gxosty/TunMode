@@ -16,6 +16,8 @@ namespace tunmode
 
 	void SessionManager::remove(uint64_t id)
 	{
+		std::lock_guard<std::mutex> lock(this->mtx);
+		
 		Session* session = this->sessions[id];
 		this->sessions.erase(id);
 		delete session;
