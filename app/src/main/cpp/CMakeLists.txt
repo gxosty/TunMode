@@ -11,6 +11,7 @@ set(CMAKE_CXX_STANDARD 20)
 project(TunMode)
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
+include_directories(${CMAKE_SOURCE_DIR}/src/)
 include_directories(${CMAKE_SOURCE_DIR}/src/internal)
 
 if (${ANDROID_ABI} STREQUAL "armeabi-v7a")
