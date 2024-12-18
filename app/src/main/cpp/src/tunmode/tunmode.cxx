@@ -23,7 +23,7 @@ namespace tunmode
 		in_addr dns_address;
 		jobject TunModeService_object;
 		std::atomic<bool> stop_flag;
-		
+
 		std::promise<void> tunnel_promise;
 		std::atomic<int> thread_count;
 	}

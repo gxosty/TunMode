@@ -5,6 +5,7 @@ plugins {
 android {
     namespace 'git.gxosty.tunmode'
     compileSdk 34
+    ndkVersion "27.2.12479018"
 
     defaultConfig {
         applicationId "git.gxosty.tunmode"
@@ -17,7 +18,7 @@ android {
 
         externalNativeBuild {
             cmake {
-                cppFlags '-std=c++20'
+                cppFlags '-std=c++23'
 
                 if (project.hasProperty("armeabi-v7a")) {
                     abiFilters "armeabi-v7a"
